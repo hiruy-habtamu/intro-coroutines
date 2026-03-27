@@ -18,14 +18,16 @@ suspend fun loadContributorsProgress(
 
     // Using mutableList here instead of making an immutable List is a bad idea in the case of concurrency
     // Things like race conditions are bound to happen as mutable functions such as MutableList<T>.add() ARE NOT ATOMIC!
-    val users: MutableList<User> = emptyList<User>().toMutableList()
+    var allUsers = emptyList<User>()
 
     repos.withIndex().forEach { (index, repo) ->
         val repoUsers = service
             .getRepoContributors(req.org, repo.name)
             .also { logUsers(repo, it) }
             .bodyList()
-        users.addAll(repoUsers)
-        updateResults(users.aggregate(), index == repos.lastIndex)
+
+        allUsers = (allUsers + repoUsers).aggregate()
+
+        updateResults(allUsers, index == repos.lastIndex)
     }
 }
